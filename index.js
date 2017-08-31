@@ -24,7 +24,7 @@ R.prototype.data = function() {
   return this;
 };
 
-R.prototype.call = function(_opts, _callback) {
+R.prototype.call = function(_opts, _callback, resolve) {
   var callback = _callback || _opts;
   var opts = _.isFunction(_opts) ? {} : _opts;
   this.options.env.input = JSON.stringify([this.d, this.path, opts]);
@@ -33,6 +33,9 @@ R.prototype.call = function(_opts, _callback) {
   child.stdout.on("data", function(d) {
     callback(null, JSON.parse(d));
   });
+  child.on('close', (code) => {
+    if(resolve) resolve(code);
+  })
 };
 
 R.prototype.callSync = function(_opts) {
