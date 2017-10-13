@@ -46,7 +46,9 @@ R.prototype.call = function (_opts, _callback, resolve) {
     // console.log("stdout.onEnd()");
     var d = Buffer.concat(data);
     data = [];
-    callback(null, JSON.parse(d));
+    var result;
+    try { result = JSON.parse(d); } catch (e) { result = null; }
+    callback(null, result);
   });
   //<--
   child.on('close', (code) => {
