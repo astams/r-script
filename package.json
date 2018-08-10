@@ -16,7 +16,7 @@
   "main": "index.js",
   "repository": "joshkatz/r-script",
   "dependencies": {
-    "underscore": "^1.8.3"
+    "underscore": "1.8.3"
   },
   "devDependencies": {
     "queue-async": "^1.0.7"
