@@ -6,15 +6,26 @@ function init(path) {
   return _.bindAll(obj, "data", "call", "callSync");
 }
 
+//detact pkg 
+const PKG_MODE = (process.pkg) ? true : false;
+
 function R(path) {
   this.d = {};
   this.path = path;
-  this.options = {
-    env: _.extend({ DIRNAME: __dirname }, process.env),
-    encoding: "utf8"
-  };
   this.idCounter = 0;
-  this.args = ["--vanilla", __dirname + "/R/launch.R"];
+  if (PKG_MODE) {
+    this.options = {
+      env: _.extend({ DIRNAME: process.cwd() + "/R" }, process.env),
+      encoding: "utf8"
+    };
+    this.args = ["--vanilla", process.cwd() + "/R/launch.R"];
+  } else {
+    this.options = {
+      env: _.extend({ DIRNAME: __dirname }, process.env),
+      encoding: "utf8"
+    };
+    this.args = ["--vanilla", __dirname + "/R/launch.R"];
+  }
 }
 
 R.prototype.data = function () {
