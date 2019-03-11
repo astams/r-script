@@ -15,10 +15,10 @@ function R(path) {
   this.idCounter = 0;
   if (PKG_MODE) {
     this.options = {
-      env: _.extend({ DIRNAME: process.cwd() + "/R" }, process.env),
+      env: _.extend({ DIRNAME: process.cwd() + "/build" }, process.env),
       encoding: "utf8"
     };
-    this.args = ["--vanilla", process.cwd() + "/R/launch.R"];
+    this.args = ["--vanilla", process.cwd() + "/build/launch.R"];
   } else {
     this.options = {
       env: _.extend({ DIRNAME: __dirname }, process.env),
