@@ -41,7 +41,17 @@ R.prototype.call = function (_opts, _callback, resolve) {
   this.options.env.input = JSON.stringify([this.d, this.path, opts]);
   this.options.env.LANG = "en_US.UTF-8";
   var child = child_process.spawn("Rscript", this.args, this.options);
-  child.stderr.on("data", callback);
+  var eData = [];
+  child.stderr.on("data", function (err) {
+    // console.log("stderr.onData():", err.toString());
+    eData.push(err);
+  });
+  child.stderr.on("end", function () {
+    // console.log("stderr.onEnd()");
+    callback(eData, null);
+  });
+
+
   //-->
   // child.stdout.on("data", function (d) {
   //   callback(null, JSON.parse(d));
@@ -64,7 +74,7 @@ R.prototype.call = function (_opts, _callback, resolve) {
   });
   //<--
   child.on('close', (code) => {
-    // console.log("onClose()");
+    // console.log("onClose():", code);
     if (resolve) resolve(code);
   })
 };
