@@ -45,6 +45,7 @@ R.prototype.call = function (_opts, _callback, resolve) {
   // console.log("rBinPath=", this.rBinPath, "\nargs=", this.args, "\noptions=", this.options);
   let child;
   if (this.rBinPath) {
+    this.options.maxBuffer = 64 * 1024 * 1024;
     child = child_process.execFile(Path.join(this.rBinPath, "Rscript"), this.args, this.options,
       (error) => { if (error) console.log("error=", error); });
   } else {
