@@ -1,90 +1,91 @@
-var _ = require("underscore"),
-  child_process = require("child_process");
+const _ = require("underscore");
+const child_process = require("child_process");
 
-function init(path) {
-  var obj = new R(path);
+const Path = require("path");
+
+function init(path, rBinPath) {
+  const obj = new R(path, rBinPath);
   return _.bindAll(obj, "data", "call", "callSync");
 }
 
-//detact pkg 
-const PKG_MODE = (process.pkg) ? true : false;
-
-function R(path) {
+function R(path, rBinPath) {
   this.d = {};
   this.path = path;
+  this.rBinPath = rBinPath;
   this.idCounter = 0;
-  if (PKG_MODE) {
-    this.options = {
-      env: _.extend({ DIRNAME: process.cwd() + "/build" }, process.env),
-      encoding: "utf8"
-    };
-    this.args = ["--vanilla", process.cwd() + "/build/launch.R"];
+  let DIRNAME, rSrcDir;
+  if (process.pkg) {
+    DIRNAME = Path.join(process.cwd(), "build");
+    rSrcDir = DIRNAME;
   } else {
-    this.options = {
-      env: _.extend({ DIRNAME: __dirname }, process.env),
-      encoding: "utf8"
-    };
-    this.args = ["--vanilla", __dirname + "/R/launch.R"];
+    DIRNAME = __dirname;
+    rSrcDir = Path.join(__dirname, "R");
   }
+  this.options = {
+    env: _.extend({ DIRNAME }, process.env),
+    encoding: "utf8"
+  };
+  this.args = ["--vanilla", Path.join(rSrcDir, "launch.R")];
 }
 
 R.prototype.data = function () {
-  for (var i = 0; i < arguments.length; i++) {
-    this.d[++this.idCounter] = arguments[i];
+  for (let i = 0; i < arguments.length; ++i) {
+    ++this.idCounter;
+    this.d[this.idCounter] = arguments[i];
   }
   return this;
 };
 
 R.prototype.call = function (_opts, _callback, resolve) {
-  var callback = _callback || _opts;
-  var opts = _.isFunction(_opts) ? {} : _opts;
+  const callback = _callback || _opts;
+  const opts = _.isFunction(_opts) ? {} : _opts;
+
   this.options.env.input = JSON.stringify([this.d, this.path, opts]);
   this.options.env.LANG = "en_US.UTF-8";
-  var child = child_process.spawn("Rscript", this.args, this.options);
-  var eData = [];
+  // console.log("rBinPath=", this.rBinPath, "\nargs=", this.args, "\noptions=", this.options);
+  let child;
+  if (this.rBinPath) {
+    child = child_process.execFile(Path.join(this.rBinPath, "Rscript"), this.args, this.options,
+      (error) => { if (error) console.log("error=", error); });
+  } else {
+    child = child_process.spawn("Rscript", this.args, this.options);
+  }
+
+  const errors = [];
   child.stderr.on("data", function (err) {
-    // console.log("stderr.onData():", err.toString());
-    eData.push(err);
+    // console.log("stderr.onData() err=", err.toString());
+    errors.push(err);
   });
   child.stderr.on("end", function () {
     // console.log("stderr.onEnd()");
-    callback(eData, null);
+    callback(errors, null);
   });
 
-
-  //-->
-  // child.stdout.on("data", function (d) {
-  //   callback(null, JSON.parse(d));
-  // });
-  //--
-  // jw.yi@nosquest.com 2017-09-07 : Modified for IDSysCDT
-  //    Fixed JSON parsing error: large data is received in multiple data events
-  var data = [];
+  const data = [];
   child.stdout.on("data", function (d) {
-    // console.log("stdout.onData()", d.toString());
-    data.push(d);
+    // console.log("stdout.onData() d=", d.toString());
+    data.push(new Buffer(d));
   });
   child.stdout.on("end", function () {
     // console.log("stdout.onEnd()");
-    var d = Buffer.concat(data);
-    data = [];
-    var result;
+    const d = Buffer.concat(data);
+    let result;
     try { result = JSON.parse(d); } catch (e) { result = null; }
     callback(null, result);
   });
-  //<--
-  child.on('close', (code) => {
-    // console.log("onClose():", code);
-    if (resolve) resolve(code);
-  })
-};
+
+  child.on("close", (code) => {
+    // console.log("onClose() code=", code);
+    if (resolve) { resolve(code); }
+  });
+};  // call
 
 R.prototype.callSync = function (_opts) {
-  var opts = _opts || {};
+  const opts = _opts || {};
   this.options.env.input = JSON.stringify([this.d, this.path, opts]);
-  var child = child_process.spawnSync("Rscript", this.args, this.options);
-  if (child.stderr) throw child.stderr;
-  return (JSON.parse(child.stdout));
+  const child = child_process.spawnSync("Rscript", this.args, this.options);
+  if (child.stderr) { throw child.stderr; }
+  return JSON.parse(child.stdout);
 };
 
 module.exports = init;
