@@ -36,7 +36,7 @@ R.prototype.data = function () {
   return this;
 };
 
-R.prototype.call = function (_opts, _callback, resolve) {
+R.prototype.call = function (_opts, _callback) {
   const callback = _callback || _opts;
   const opts = _.isFunction(_opts) ? {} : _opts;
 
@@ -77,7 +77,7 @@ R.prototype.call = function (_opts, _callback, resolve) {
 
   child.on("close", (code) => {
     // console.log("onClose() code=", code);
-    if (resolve) { resolve(code); }
+    callback(code, null);
   });
 };  // call
 
