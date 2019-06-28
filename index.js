@@ -47,7 +47,12 @@ R.prototype.call = function (_opts, _callback) {
   if (this.rBinPath) {
     this.options.maxBuffer = 64 * 1024 * 1024;
     child = child_process.execFile(Path.join(this.rBinPath, "Rscript"), this.args, this.options,
-      (error) => { if (error) console.log("error=", error); });
+      (error) => {
+        if (error) {
+          // console.log("error=", error);
+          callback(error, null);
+        }
+      });
   } else {
     child = child_process.spawn("Rscript", this.args, this.options);
   }
@@ -59,7 +64,9 @@ R.prototype.call = function (_opts, _callback) {
   });
   child.stderr.on("end", function () {
     // console.log("stderr.onEnd()");
-    callback(errors, null);
+    if (0 < errors.length) {
+      callback(errors, null);
+    }
   });
 
   const data = [];
@@ -70,14 +77,18 @@ R.prototype.call = function (_opts, _callback) {
   child.stdout.on("end", function () {
     // console.log("stdout.onEnd()");
     const d = Buffer.concat(data);
-    let result;
-    try { result = JSON.parse(d); } catch (e) { result = null; }
-    callback(null, result);
+    try {
+      callback(null, JSON.parse(d));
+    } catch (e) {
+      callback(e, null);
+    }
   });
 
   child.on("close", (code) => {
     // console.log("onClose() code=", code);
-    callback(code, null);
+    if (code) {
+      callback(code, null);
+    }
   });
 };  // call
 
