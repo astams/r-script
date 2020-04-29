@@ -50,7 +50,7 @@ R.prototype.call = function (_opts, _callback) {
       (error) => {
         if (error) {
           // console.log("error=", error);
-          callback(error, null);
+          callback(error, null, null);
         }
       });
   } else {
@@ -65,7 +65,7 @@ R.prototype.call = function (_opts, _callback) {
   child.stderr.on("end", function () {
     // console.log("stderr.onEnd()");
     if (0 < errors.length) {
-      callback(errors, null);
+      callback(null, errors, null);
     }
   });
 
@@ -78,16 +78,16 @@ R.prototype.call = function (_opts, _callback) {
     // console.log("stdout.onEnd()");
     const d = Buffer.concat(data);
     try {
-      callback(null, JSON.parse(d));
+      callback(null, null, JSON.parse(d));
     } catch (e) {
-      callback(e, null);
+      callback(e, null, null);
     }
   });
 
   child.on("close", (code) => {
     // console.log("onClose() code=", code);
     if (code) {
-      callback(code, null);
+      callback(code, null, null);
     }
   });
 };  // call
